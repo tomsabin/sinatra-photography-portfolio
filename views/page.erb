@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang='en'>
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+  <title>Tom Sabin - Photography Portfolio</title>
+  <link rel='stylesheet' href='/css/boilerplate.css' />
+  <link rel='stylesheet' href='/css/foundation.css' />
+  <link rel='stylesheet' href='/css/page.css' />
+</head>
+<body>
+  <nav class='top-bar'>&nbsp;</nav>
+  <div class='row'>
+    <div class='large-12 columns'>
+      <h1 class='title'>tom<strong>sabin</strong></h1>
+    </div>
+
+    <% if featured_photo %>
+      <a class='large-12 columns featured image'
+         style='background-image: url("<%= featured_photo.original_image_url %>")'
+         data-thumbnail-image-url='<%= featured_photo.thumbnail_image_url %>'
+         data-original-image-url='<%= featured_photo.original_image_url %>'
+         data-photo-id='<%= featured_photo.photo_id %>'
+         data-title="<%= featured_photo.title %>"
+         href='/photo/<%= featured_photo.photo_id %>'>
+      </a>
+    <% end %>
+
+    <div class='photos-container'>
+      <% photos.each do |photo| %>
+        <a class='large-3 medium-4 small-6 columns square image'
+           style='background-image: url("<%= photo.thumbnail_image_url %>")'
+           data-thumbnail-image-url='<%= photo.thumbnail_image_url %>'
+           data-original-image-url='<%= photo.original_image_url %>'
+           data-photo-id='<%= photo.photo_id %>'
+           data-title="<%= photo.title %>"
+           href='/photo/<%= photo.photo_id %>'>
+        </a>
+      <% end %>
+    </div>
+  </div>
+
+
+  <div class='row'>
+    <div class='large-12 columns'>
+      <% if next_page %>
+        <a id='next' class='button next-page' href='/page/<%= next_page %>'>more photos</a>
+      <% else %>
+        <br /><br /><br />
+      <% end %>
+    </div>
+  </div>
+
+  <script src='/js/jquery-min.js'></script>
+  <script src='/js/underscore-min.js'></script>
+  <script src='/js/backbone-min.js'></script>
+  <script>
+
+    var TOMSABIN = {
+      current_page: 1,
+      next_page: 2
+    };
+
+    (function( window, document, $, _, Backbone, global, undefined ){
+
+      // ------------ Photo loader -------------- //
+      Photo = Backbone.Model.extend({
+        defaults: {
+          id: 'undefined',
+          original_image_url: 'undefined',
+          thumbnail_image_url: 'undefined',
+          title: 'undefined',
+        }
+      });
+
+      PhotoView = Backbone.View.extend({
+        tagName: 'a',
+        className: 'large-3 medium-4 small-6 columns square image',
+        attributes: function () {
+          return {
+            "style": "background-image: url('" + this.model.attributes.thumbnail_image_url + "')",
+            "data-thumbnail-image-url": this.model.attributes.thumbnail_image_url,
+            "data-original-image-url": this.model.attributes.original_image_url,
+            "data-photo-id": this.model.id,
+            "data-title": this.model.attributes.title,
+            "href": "/photo/" + this.model.id
+          }
+        }
+      });
+
+      PhotoCollection = Backbone.Collection.extend({
+        model: Photo
+      });
+
+      PhotoCollectionView = Backbone.View.extend({
+        el: $('.photos-container'),
+        render: function () {
+          this.collection.each(function ( photo ) {
+            var photoView = new PhotoView({
+              model: photo
+            });
+            this.$el.append(photoView.el)
+          }, this);
+        }
+      });
+
+      // ------------ Next button -------------- //
+      var photoCollection;
+      var nextButton;
+      var infiniteScroll;
+      nextButton = Backbone.View.extend({
+        el: $('#next'),
+        events: {
+          "click" : "buttonClick"
+        },
+        buttonClick: function ( event ) {
+          event.preventDefault();
+          getPhotos();
+          $('#next').remove();
+          infiniteScroll = new inifinteScroll();
+        }
+      });
+      new nextButton();
+
+      // ------------ Photo viewer (whole screen) -------------- //
+
+      // ------------ Infinite scroll -------------- //
+
+      inifinteScroll = Backbone.View.extend({
+        initialize: function () {
+          _.bindAll(this, 'detectScroll');
+          $(window).scroll(this.detectScroll);
+          infiniteScrollCallCount = 0;
+        },
+        detectScroll: function () {
+          var triggerPoint;
+          var totalHeight;
+          var currentHeight;
+          triggerPoint = 640;
+          totalHeight = document.body.scrollHeight;
+          currentHeight = window.scrollY + window.innerHeight;
+          if ( (currentHeight + triggerPoint) > totalHeight ) {
+            console.log("Scroll detected");
+            infiniteScrollCallCount++;
+            if (infiniteScrollCallCount === 1) {
+              getPhotos();
+            }
+            // check if ajax request has been made already..!
+          }
+        },
+        resetCount: function () {
+          infiniteScrollCallCount = 0;
+        }
+      });
+      // ------------ AJAX functions -------------- //
+
+      function getPhotos() {
+        console.log("getPhotos: " + TOMSABIN.current_page + ", " + TOMSABIN.next_page);
+        $.getJSON( '/api/page/' + TOMSABIN.next_page, function ( data ) {
+          if ( data && data.photos ) {
+            var tempArray = [];
+            $( data.photos ).each(function( i, el ) {
+              var jsonToObj;
+              var photo;
+              jsonToObj = $.parseJSON( el );
+              photo = new Photo( jsonToObj );
+              tempArray.push(photo);
+            });
+            photoCollection = new PhotoCollection(tempArray);
+            photoCollectionView = new PhotoCollectionView({
+              collection: photoCollection
+            });
+            photoCollectionView.render();
+          }
+        }).done(function () {
+          // window.history.pushState('Object', 'Title', '/pages/1-' + nextPage);
+          infiniteScroll.resetCount();
+          // TOMSABIN.current_page = nextPage;
+          TOMSABIN.next_page = TOMSABIN.next_page + 1;
+        });
+      };
+
+    })( window, document, jQuery, _, Backbone, TOMSABIN );
+
+
+
+  </script>
+</body>
+</html>

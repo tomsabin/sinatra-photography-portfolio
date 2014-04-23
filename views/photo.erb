@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang='en' xmlns="http://www.w3.org/1999/xhtml" xmlns:svg="http://www.w3.org/2000/svg">
+<head>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+  <title>Tom Sabin - Photography Portfolio</title>
+  <link rel='stylesheet' href='/css/boilerplate.css' />
+  <link rel='stylesheet' href='/css/foundation.css' />
+  <link rel='stylesheet' href='/css/page.css' />
+  <style type='text/css'>
+    .bg-img { filter: url(#img-blur); }
+  </style>
+</head>
+<body class='photo-view'>
+  <% if photo %>
+    <div class='large-12 columns bg-img' style='background-image: url("<%= photo.thumbnail_image_url %>")'></div>
+    <div class='row text-center'>
+      <div class='medium-11 small-centered columns'>
+        <img class='full-image' src='<%= photo.original_image_url %>' alt='<%= photo.title %>' />
+        <br />
+        <h1 class='title photo-title'>
+          <%= photo.title %>
+        </h1>
+        <div class="icon-container">
+          <a href='/' title='Go back to the homepage'>
+            <img class='icon' src='/img/back-64.png' alt='Back' />
+          </a>
+          <a href='http://www.flickr.com/photos/tom-sabin/<%= photo.photo_id %>/' title='View this on Flickr'>
+            <img class='icon' src='/img/social/flickr-64.png' alt='Flickr' />
+          </a>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <svg:svg>
+    <svg:filter id="img-blur">
+      <svg:feGaussianBlur stdDeviation="5"/>
+    </svg:filter>
+  </svg:svg>
+  <script src='/js/modernizr.js'></script>
+  <script src='/js/jquery-min.js'></script>
+  <script src='/js/underscore-min.js'></script>
+  <script src='/js/backbone-min.js'></script>
+  <script>
+
+  </script>
+</body>
+</html>
